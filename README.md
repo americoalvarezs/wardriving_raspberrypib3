@@ -12,15 +12,14 @@
 <img src="imagenes/instalar_raspbian.gif" alt="Texto alternativo" width="500"></br>
 Ingresamos por ssh a la consola del raspberry (recomendacion conectar con cable ethernet)</br>
 <img src="imagenes/02 Coneccion por ssh a raspberry.PNG" alt="Texto alternativo" width="500"></br>
-Se verifica arquitectura y kernel:  
-`uname -m `
-armv7l
-`uname -r `
-6.12.75+rpt-rpi-v7
-
+Se verifica arquitectura y kernel:  </br>
+`uname -m `</br>
+armv7l</br>
+`uname -r `</br>
+6.12.75+rpt-rpi-v7</br>
 **instalar dependencias y headers para el kernel especifico de la raspberry pi b3**
-sudo apt update
-sudo apt install -y build-essential dkms git libelf-dev bc aircrack-ng
+`sudo apt update`</br>
+`sudo apt install -y build-essential dkms git libelf-dev bc aircrack-ng`</br>
 // solo si se trabajara con version 64bits se debe de instalar la version 8
 // sudo apt install -y linux-headers-rpi-v8
 
