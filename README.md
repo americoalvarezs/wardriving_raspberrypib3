@@ -8,4 +8,4 @@
 - Sistema Operativo Raspberry Pi OS Lite (32bits) a port of Debian Trixie with no desktop environment.
 - Kismet 
 ### Preparar S.O. e instalar herramientas
-<img src="assets/nombre-de-la-imagen.png" alt="Texto alternativo" width="500">
+<img src="imagenes/02 Coneccion por ssh a raspberry.PNG" alt="Texto alternativo" width="500">
