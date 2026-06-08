@@ -29,5 +29,19 @@ armv7l</br>
 `sudo make`</br>
 `sudo make install`</br>
 `sudo depmod -a`</br>
+`sudo reboot`</br>
+**Colocar antena en modo monitor**</br>
+`sudo systemctl stop wpa_supplicant 2>/dev/null`</br>
+`sudo killall wpa_supplicant 2>/dev/null`</br>
+`sudo rfkill unblock all`</br>
+`sudo ip link set wlan0 down`</br>
+`sudo iw dev wlan0 set type monitor`</br>
+`sudo ip link set wlan0 up`</br>
+`iw dev`</br>
+Verificar con un aridodump si todo funciona bien
+`sudo airodump-ng wlan0`</br>
+
+
+
 
 
