@@ -49,6 +49,7 @@ en mi caso esta en wlan01</br>
 `iw dev`</br>
 Verificar con un aridodump si todo funciona bien</br>
 `sudo airodump-ng wlan1`</br>
+*nota: CTRL + C  para detener una vez verioficado que esta funcionando*</br>
 **Colocar antena en modo managed (normal mode)** </br>
 `sudo ip link set wlan1 down`</br>
 `sudo iw dev wlan1 set type managed`</br>
