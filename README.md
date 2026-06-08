@@ -9,7 +9,7 @@
 - Kismet 
 ### Preparar S.O. e instalar herramientas
 **Instalar Raspbian CLI** para optimizar el consumo de memoria.</br>
-<img src="imagenes/instalar_raspbian.gif" alt="Texto alternativo" width="500"></br>
+<img src="imagenes/01 instalar_raspbian.gif" alt="Texto alternativo" width="500"></br>
 Ingresamos por ssh a la consola del raspberry (recomendacion conectar con cable ethernet)</br>
 <img src="imagenes/02 Coneccion por ssh a raspberry.PNG" alt="Texto alternativo" width="500"></br>
 Se verifica arquitectura y kernel:  </br>
