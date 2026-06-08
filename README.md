@@ -20,8 +20,7 @@ aarch64</br>
 **instalar dependencias y headers para el kernel especifico de la raspberry pi b3**</br>
 `sudo apt update`</br>
 `sudo apt install -y build-essential dkms git libelf-dev bc aircrack-ng`</br>
-// solo si se trabajara con version 64bits se debe de instalar la version 8</br>
-// sudo apt install -y linux-headers-rpi-v8</br>
+`sudo apt install -y linux-headers-rpi-v8`</br>
 **Clonar el driver para chipset rtl8812au especifico para antena wifi**</br>
 `cd /usr/src`</br>
 `sudo git clone -b v5.6.4.2 https://github.com/aircrack-ng/rtl8812au.git`</br>
