@@ -59,9 +59,25 @@ nota: en mi caso esta en el:</br>
 ID_MODEL=0043</br>
 ID_VENDOR=Arduino__www.arduino.cc_</br>
 ===== /dev/ttyACM1 =====</br>
-ID_MODEL=u-blox_7_-_GPS_GNSS_Receiver</br>
-ID_VENDOR=u-blox_AG_-_www.u-blox.com</br>
-fdafdsafdsa
+ID_MODEL=u-blox_7_-_GPS_GNSS_Receiver </br>
+ID_VENDOR=u-blox_AG_-_www.u-blox.com </br>
+
+Instalar el driver del VK-162 </br>
+`sudo apt update`</br>
+`sudo apt install -y gpsd gpsd-clients`</br>
+`sudo systemctl stop gpsd.socket`</br>
+`sudo gpsd /dev/ttyACM1 -F /var/run/gpsd.sock`</br>
+`cgps -s`</br>
+*nota: CTRL + C  para detener una vez verioficado que esta funcionando*</br>
+
+Modificar el archivo gpsd: `sudo nano /etc/default/gpsd`</br>
+```
+START_DAEMON="true"
+DEVICES="/dev/ttyACM1"
+GPSD_OPTIONS="-n"
+USBAUTO="false"
+```
+
 
 
 
