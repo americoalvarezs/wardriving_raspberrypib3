@@ -38,20 +38,21 @@ aarch64</br>
 **Colocar antena en modo monitor** </br>
 verificar en que wlan* esta la antena wifi con modo monitor </br>
 `sudo airmon-ng`</br>
-<img src="03 interfaz modo monitor.PNG" alt="" width="500"></br>
+<img src="imagenes/03 interfaz modo monitor.PNG" alt="" width="500"></br>
+en mi caso esta en wlan01</br>
 `sudo systemctl stop wpa_supplicant 2>/dev/null`</br>
 `sudo killall wpa_supplicant 2>/dev/null`</br>
 `sudo rfkill unblock all`</br>
-`sudo ip link set wlan0 down`</br>
-`sudo iw dev wlan0 set type monitor`</br>
-`sudo ip link set wlan0 up`</br>
+`sudo ip link set wlan1 down`</br>
+`sudo iw dev wlan1 set type monitor`</br>
+`sudo ip link set wlan1 up`</br>
 `iw dev`</br>
 Verificar con un aridodump si todo funciona bien</br>
-`sudo airodump-ng wlan0`</br>
+`sudo airodump-ng wlan1`</br>
 **Colocar antena en modo managed (normal mode)** </br>
-`sudo ip link set wlan0 down`</br>
-`sudo iw dev wlan0 set type managed`</br>
-`sudo ip link set wlan0 up`</br>
+`sudo ip link set wlan1 down`</br>
+`sudo iw dev wlan1 set type managed`</br>
+`sudo ip link set wlan1 up`</br>
 `sudo systemctl start wpa_supplicant`</br>
 
 **Instalar y utilizar el VK162 USB** </br>
