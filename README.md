@@ -38,8 +38,16 @@ armv7l</br>
 `sudo iw dev wlan0 set type monitor`</br>
 `sudo ip link set wlan0 up`</br>
 `iw dev`</br>
-Verificar con un aridodump si todo funciona bien
+Verificar con un aridodump si todo funciona bien</br>
 `sudo airodump-ng wlan0`</br>
+**Colocar antena en modo managed (normal mode)**</br>
+```sudo ip link set wlan0 down
+sudo iw dev wlan0 set type managed
+sudo ip link set wlan0 up
+sudo systemctl start wpa_supplicant```
+
+
+
 
 
 
