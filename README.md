@@ -47,12 +47,20 @@ Verificar con un aridodump si todo funciona bien</br>
 `sudo systemctl start wpa_supplicant`</br>
 
 **Instalar y utilizar el VK162 USB** </br>
-Primero se debe de identificar en que USB esta conectado
-```for dev in /dev/ttyACM*; do
+Primero se debe de identificar en que USB esta conectado el VK162 y talvez otro dispositivo
+```
+for dev in /dev/ttyACM*; do
     echo "===== $dev ====="
     udevadm info -q property -n $dev | grep -E "ID_VENDOR=|ID_MODEL="
-done ```
-
+done
+```
+nota: en mi caso esta en el:</br>
+===== /dev/ttyACM0 =====</br>
+ID_MODEL=0043</br>
+ID_VENDOR=Arduino__www.arduino.cc_</br>
+===== /dev/ttyACM1 =====</br>
+ID_MODEL=u-blox_7_-_GPS_GNSS_Receiver</br>
+ID_VENDOR=u-blox_AG_-_www.u-blox.com</br>
 fdafdsafdsa
 
 
