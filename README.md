@@ -15,9 +15,9 @@
 - Kismet 
 ### Preparar S.O. e instalar herramientas
 **Instalar Raspbian CLI** para optimizar el consumo de memoria.</br>
-<img src="imagenes/01 instalar_raspbian.gif" alt="Texto alternativo" width="500"></br>
+<img src="imagenes/01 instalar_raspbian.gif" alt="" width="500"></br>
 Ingresamos por ssh a la consola del raspberry (recomendacion conectar con cable ethernet)</br>
-<img src="imagenes/02 Coneccion por ssh a raspberry.PNG" alt="Texto alternativo" width="500"></br>
+<img src="imagenes/02 Coneccion por ssh a raspberry.PNG" alt="" width="500"></br>
 Se verifica arquitectura y kernel:  </br>
 `uname -m `</br>
 aarch64</br>   
@@ -36,6 +36,9 @@ aarch64</br>
 `sudo depmod -a`</br>
 `sudo reboot`</br>
 **Colocar antena en modo monitor** </br>
+verificar en que wlan* esta la antena wifi con modo monitor </br>
+`sudo airmon-ng`</br>
+<img src="03 interfaz modo monitor.PNG" alt="" width="500"></br>
 `sudo systemctl stop wpa_supplicant 2>/dev/null`</br>
 `sudo killall wpa_supplicant 2>/dev/null`</br>
 `sudo rfkill unblock all`</br>
