@@ -47,9 +47,13 @@ Verificar con un aridodump si todo funciona bien</br>
 `sudo systemctl start wpa_supplicant`</br>
 
 **Instalar y utilizar el VK162 USB** </br>
+Primero se debe de identificar en que USB esta conectado
+```for dev in /dev/ttyACM*; do
+    echo "===== $dev ====="
+    udevadm info -q property -n $dev | grep -E "ID_VENDOR=|ID_MODEL="
+done ```
 
-
-
+fdafdsafdsa
 
 
 
