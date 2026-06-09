@@ -115,3 +115,24 @@ source=wlan1:type=linuxwifi
 gps=gpsd:host=localhost,port=2947
 ```
 
+## SCRIPTS AUTOMATIZADOS
+1. Levantar Kismet: de manera directa en primer plano kismet_up.sh
+   [codigo completo aqui](kismet_prog/kismet_up.sh)
+2. Levantar Kismet: en segundo plano (recomendado) utilizando screen
+- Se debe de instalar antes screen  </br>
+`sudo apt update`   </br>
+`sudo apt install -y screen`  </br>
+verificar si instalo correctamente  </br>
+`screen --version`  </br>
+- Luego lanzar [este codigo](kismet_prog/start_wardrive.sh) automatizado que realiza las siguientes acciones:  </br> screen -S wardrive
+↓
+ejecuta kismet_up.sh
+↓
+arranca gpsd
+↓
+pone wlan1 monitor
+↓
+levanta Kismet
+↓
+te devuelve el prompt SSH
+- y estara obteniendo automaticamente la captura kismet, pero cuando quiero cerrar la sesion solamente ejecutar [este codigo](kismet_prog/stop_wardrive.sh)
