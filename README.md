@@ -98,19 +98,20 @@ USBAUTO="false"
 
 
 **Instalar KISMET** </br>
-Primero se debe de identificar en que USB esta conectado el VK162 y talvez otro dispositivo
 ```
-for dev in /dev/ttyACM*; do
-    echo "===== $dev ====="
-    udevadm info -q property -n $dev | grep -E "ID_VENDOR=|ID_MODEL="
-done
+sudo mkdir -p /etc/apt/keyrings
+wget -O /tmp/kismet.key https://www.kismetwireless.net/repos/kismet-release.gpg.key
+sudo gpg --dearmor -o /etc/apt/keyrings/kismet.gpg /tmp/kismet.key
+echo "deb [signed-by=/etc/apt/keyrings/kismet.gpg] https://www.kismetwireless.net/repos/apt/release/trixie trixie main" | sudo tee /etc/apt/sources.list.d/kismet.list
+sudo apt update
+sudo apt install -y kismet
 ```
-nota: en mi caso esta en el:</br>
-===== /dev/ttyACM0 =====</br>
-ID_MODEL=0043</br>
-ID_VENDOR=Arduino__www.arduino.cc_</br>
-===== /dev/ttyACM1 =====</br>
-ID_MODEL=u-blox_7_-_GPS_GNSS_Receiver </br>
-ID_VENDOR=u-blox_AG_-_www.u-blox.com </br>
-
+verificando instalacion </br>
+`kismet -v`</br>
+ingresar a la siguiente direccion `sudo nano /etc/kismet/kismet.conf`  </br>
+y colocar las siguientes lineas (descomentar y modificar): </br>
+```
+source=wlan1:type=linuxwifi
+gps=gpsd:host=localhost,port=2947
+```
 
