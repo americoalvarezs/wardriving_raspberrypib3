@@ -353,227 +353,85 @@ inicia Kismet
 devuelve SSH
 ```
 
-guardabndo los arcfhivos *.kismet en db_sensores/  de manera automatica ordenando la generacion de la base de datos kismet
+guardando los arcfhivos *.kismet en db_sensores/  de manera automatica ordenando la generacion de la base de datos kismet
 
 ---
 
-# PARTE 2: Sistema de Captura de Sensores  
-## Arduino + Training Shield V2 + Raspberry Pi 3 B+
 
-Este subsistema implementa una plataforma portátil de adquisición de datos físicos utilizando:
 
-- Arduino Uno como unidad de adquisición
-- Arduino Training Shield V2 como plataforma de sensores
-- Raspberry Pi 3 B+ como sistema central de procesamiento y almacenamiento
+## PARTE 2 — Sistema de Telemetria y Adquisicion de Datos (Arduino + Raspberry Pi)
 
-El sistema permite la captura, transmisión y almacenamiento de datos en una base de datos SQLite de forma continua y automatizada.
+### Objetivo Tecnico
+Implementar un nodo de adquisición determinística de variables físicas del entorno mediante el uso de un microcontrolador dedicado para el muestreo analógico/digital y un sistema embebido Linux operando en modo headless como data-logger pasivo.
 
 ---
 
-# Arquitectura del Sistema de Sensores
+### Especificaciones de Hardware (Subsistema de Telemetría)
+
+* **Unidad de Adquisición Local:** Arduino UNO (ATmega328P).
+* **Placa de Expansión:** Arduino Training Shield V2.
+* **Sensores Integrados:**
+  * **LM35:** Sensor analógico de temperatura calibrado en grados Celsius (Muestreo vía ADC).
+  * **LDR (Fotorresistencia):** Divisor de tensión para la medición cualitativa de la intensidad lumínica ambiental.
+  * **DHT11:** Sensor digital para el registro redundante de temperatura y humedad relativa (Protocolo Single-Wire).
+  * **Receptor IR (38 kHz):** Sensor de demodulación para la detección de pulsos infrarrojos externos.
+
+---
+
+### Arquitectura de Flujo y Control
+
+La topología del sistema se basa en la separación estricta de tareas bajo la filosofía de diseño IoT industrial:
 
 ```text
-Sensores (Training Shield V2)
-        │
-        ├── LM35 (Temperatura analógica)
-        ├── LDR (Luminosidad - A1)
-        ├── DHT11 (Temperatura/Humedad - D4)
-        └── IR 38 kHz (D6)
-        │
-        ▼
-Arduino Uno (Concentrador de datos)
-        │ USB Serial
-        ▼
-Raspberry Pi 3 B+
-        │
-        ├── capturar_sensores.py (Python)
-        ▼
-SQLite (db_sensores/)
-Material Utilizado
-Componente	Modelo
-Raspberry Pi	Raspberry Pi 3 B+
-Microcontrolador	Arduino Uno
-Sensores	Arduino Training Shield V2
-Comunicación	USB Serial (RS232)
-Software Utilizado
-Raspberry Pi OS Lite (64-bit)
-Debian Trixie
-Python 3
-SQLite
-Arduino CLI
-Preparación del Sistema (Arduino CLI)
-Actualización del sistema
-sudo apt update
-sudo apt full-upgrade -y
-Instalación de dependencias
-sudo apt install -y curl git unzip
-Instalación Arduino CLI
-curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
-sudo mv bin/arduino-cli /usr/local/bin/
-Verificación
-arduino-cli version
-arduino-cli config init
-Instalación de placas
-arduino-cli core update-index
-arduino-cli core install arduino:avr
-arduino-cli core list
-Conexión de Arduino
-arduino-cli board list
-ls /dev/tty*
-Python y dependencias
-sudo apt install -y python3-pip python3-serial
-python3 -c "import serial; print(serial.__version__)"
-Programación del Arduino desde Raspberry Pi
+ [ Sensores Físicos ] 
+          │
+          ▼  (Lectura Directa ADC / Digital)
+ ┌──────────────────────────────────┐
+ │           Arduino UNO            │  <- Control estricto de tiempos de muestreo
+ └────────────────┬─────────────────┘
+                  │
+                  ▼  (Transmisión Unidireccional / Frame Serial)
+          [ Bus USB-UART ]
+                  │
+                  ▼  (Escucha Pasiva Asíncrona)
+ ┌──────────────────────────────────┐
+ │    Script Python (Data Logger)   │  <- Sin peticiones activas (No Polling)
+ └────────────────┬─────────────────┘
+                  │
+                  ▼  (Estructuración e Inserción local en caliente)
+ ┌──────────────────────────────────┐
+ │      Base de Datos SQLite        │  <- Persistencia organizada en db_sensores/
+ └──────────────────────────────────┘
+Filosofía de Diseño Embebido
+Determinismo en Hardware: El Arduino UNO gestiona la adquisición y temporización analógica de forma aislada. Esto garantiza inmunidad a retardos críticos (jitter) provocados por los cambios de contexto del sistema operativo de la Raspberry Pi.
 
-Estructura del proyecto:
+Escucha Pasiva en software: El script en Python actúa como un logger estrictamente asíncrono. No realiza peticiones (polling) al microcontrolador. Al eliminar el handshake interactivo, el sistema se vuelve resiliente al ruido serial y evita bloqueos de E/S en la consola de la Raspberry Pi.
 
-/home/americo/arduino/
-│
-├── sensores/
-│   └── sensores.ino
-│
-└── cargar_arduino.sh
+Protocolo de Comunicacion Serial
+La comunicación se realiza por medio del puerto serie embebido (USB-UART) con tramas delimitadas de texto plano, facilitando el procesamiento analítico inmediato:
 
-El script cargar_arduino.sh:
+1. Tramas de Telemetría Regular
+Formato estandarizado entre caracteres delimitadores de inicio < y fin > con valores separados por comas:
 
-Detecta automáticamente carpetas de proyectos
-Compila archivos .ino
-Carga el firmware al Arduino UNO
-Permite escalabilidad por módulos de sensores
-Comunicación Arduino → Raspberry Pi
+Plaintext
+<ID_DISPOSITIVO,VALOR_LM35,VALOR_LDR,VALOR_DHT11>
+Ejemplo real transmitido:
 
-El Arduino actúa como concentrador de sensores y envía datos por USB Serial.
-
-Conexiones
-LDR
-VCC → 5V
-GND → Resistencia 10kΩ → GND
-Señal → A1
-LM35
-VCC → 5V
-Vout → A2
-GND → GND
-DHT11
-VCC → 5V
-DATA → D4
-GND → GND
-Flujo del sistema
-Arduino UNO
-   ↓
-USB Serial
-   ↓
-Python (Raspberry Pi)
-   ↓
-SQLite Database
-Filosofía del sistema
-
-El sistema sigue un enfoque hardware-driven:
-
-Arduino controla la adquisición de datos
-Raspberry Pi actúa como sistema de almacenamiento
-Python funciona como logger pasivo
-
-El Arduino envía datos únicamente cuando el usuario lo activa mediante botones físicos.
-
-Protocolo de comunicación (Frames)
-Frame de datos
+Plaintext
 <0,13.20,12.70,14.00>
-Eventos
+2. Tramas de Eventos del Sistema
+Estructuras dedicadas a indicar cambios en el ciclo de vida del hardware o depuración:
+
+Plaintext
 <EVENT,START>
 <EVENT,STOP>
+Persistencia y Persistencia Temporal (Cronología SQLite)
+Sincronización Temporal Crítica
+Para evitar la desincronización al realizar el cruce de datos posterior con los logs de radiofrecuencia (WiFi), el script de Python asocia las tramas recibidas con la estampa de tiempo UTC (Coordinated Universal Time / Zulu Time). Si el sistema no dispone de conexión a red, el tiempo se sincroniza directamente desde las sentencias de tiempo atómico provistas por el daemon gpsd del módulo GPS VK-162.
 
-Características:
+Segmentación de Archivos
+Los datos se almacenan en archivos SQLite locales autogenerados con nombres dinámicos basados en la fecha y hora de inicialización del proceso de captura:
 
-Flujo determinístico
-Resistente a ruido serial
-Escalable a más sensores
-Sin dependencia crítica de Python para el control
-Sistema Python de captura
-
-Ubicación:
-
-/home/americo/python/capturar_sensores.py
-
-Funciones:
-
-Crea base de datos SQLite automáticamente
-Recibe datos del Arduino por serial
-Agrega timestamp a cada registro
-Almacena datos en db_sensores/
-Diseño del parser
-
-El sistema no utiliza readline().
-
-En su lugar utiliza un buffer continuo:
-
-buffer += chunk
-
-Ventajas:
-
-Evita desincronización
-Tolera ruido serial
-Maneja datos incompletos
-Mantiene flujo continuo de datos
-Datos válidos
-
-Solo se procesan frames completos:
-
-<0,13.20,12.70,14.00>
-Base de datos SQLite
-
-Ubicación:
-
+Plaintext
 db_sensores/
-
-Formato de archivos:
-
-sensores_YYYYMMDD_HHMMSS.db
-Ejecución automatizada
-Script principal
-1_capturar_sensores.sh
-
-Función:
-
-Abre sesión screen llamada sensores
-Ejecuta capturar_sensores.py
-Mantiene ejecución 24/7
-Registra datos automáticamente
-Sincronización temporal (CRÍTICO)
-
-Todo el sistema utiliza UTC (Zulu Time).
-
-Razones:
-
-GPS VK-162 usa UTC
-Kismet usa UTC
-SQLite debe usar UTC
-Problema evitado
-
-El uso de hora local genera desincronización de aproximadamente 4 horas en Bolivia, lo que impide la correlación correcta de datos entre sensores, GPS y capturas WiFi.
-
-Formato estándar
-
-Se utiliza formato ISO 8601:
-
-2026-06-11T02:30:15.123Z
-Resultado
-
-Permite sincronización exacta entre:
-
-Capturas WiFi (Kismet)
-Datos GPS
-Sensores Arduino
-Flujo final del sistema
-Sensores
-   ↓
-Arduino UNO
-   ↓
-USB Serial
-   ↓
-Python Logger
-   ↓
-SQLite (UTC)
-Resumen
-
-
-
+ └── sensores_YYYYMMDD_HHMMSS.db
