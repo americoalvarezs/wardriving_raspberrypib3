@@ -51,6 +51,8 @@ Raspberry Pi 3 B+
 <img src="imagenes/raspberry pi b3 up.PNG" width="600"><br>
 <img src="imagenes/tp link antena v1.PNG" width="600"><br>
 <img src="imagenes/Archer_T4UHP.jpg" width="600">
+<img src="imagenes/vk162_usb_gps_1.jpg" width="600">
+<img src="imagenes/vk162_usb_gps_2.jpg" width="600">
 </p>
 
 ---
