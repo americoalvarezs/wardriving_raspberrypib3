@@ -1,148 +1,410 @@
-# wardriving implementacion con raspberry pi b3
+# Wardriving con Raspberry Pi 3 B+ + Kismet + GPS VK-162
 
-## Material utilizado
-- raspberry pi 3 b+
-- USB - WIFI con modo monitor (TP-Link Archer T4UHP(US) VER:1.0. con chipset RTL8812AU)
-- USB - GPS VK-162 (Chip GPS u-blox 7 con salida de datos protocolo NMEA 0183)
+Implementación de una plataforma portátil de **Wardriving** utilizando **Raspberry Pi 3 B+**, una antena **Wi-Fi en modo monitor** y un receptor **GPS USB VK-162**, con captura automática mediante **Kismet**.
 
-<img src="imagenes/raspberry pi b3.PNG" alt="Texto alternativo" width="500"></br>
-<img src="imagenes/raspberry pi b3 up.PNG" alt="Texto alternativo" width="500"></br>
-<img src="imagenes/tp link antena v1.PNG" alt="Texto alternativo" width="500"></br>
-<img src="imagenes/Archer_T4UHP.jpg" alt="Texto alternativo" width="500"></br>
+---
 
-## Software
-- Sistema Operativo Raspberry Pi OS Lite (64bits) a port of Debian Trixie with no desktop environment.
-- Kismet 
-### Preparar S.O. e instalar herramientas
-**Instalar Raspbian CLI** para optimizar el consumo de memoria.</br>
-<img src="imagenes/01 instalar_raspbian.gif" alt="" width="500"></br>
-Ingresamos por ssh a la consola del raspberry (recomendacion conectar con cable ethernet)</br>
-<img src="imagenes/02 Coneccion por ssh a raspberry.PNG" alt="" width="500"></br>
-Se verifica arquitectura y kernel:  </br>
-`uname -m `</br>
-aarch64</br>   
-`uname -r `</br>
-6.12.75+rpt-rpi-v8</br>
-**instalar dependencias y headers para el kernel especifico de la raspberry pi b3**</br>
-`sudo apt update`</br>
-`sudo apt install -y build-essential dkms git libelf-dev bc aircrack-ng`</br>
-`sudo apt install -y linux-headers-rpi-v8`</br>
-**Clonar el driver para chipset rtl8812au especifico para antena wifi**</br>
-`cd /usr/src`</br>
-`sudo git clone -b v5.6.4.2 https://github.com/aircrack-ng/rtl8812au.git`</br>
-`cd rtl8812au`</br>
-`sudo make`</br>
-`sudo make install`</br>
-`sudo depmod -a`</br>
-`sudo reboot`</br>
-**Colocar antena en modo monitor** </br>
-verificar en que wlan* esta la antena wifi con modo monitor </br>
-`sudo airmon-ng`</br>
-<img src="imagenes/03 interfaz modo monitor.PNG" alt="" width="500"></br>
-en mi caso esta en wlan01</br>
-`sudo systemctl stop wpa_supplicant 2>/dev/null`</br>
-`sudo killall wpa_supplicant 2>/dev/null`</br>
-`sudo rfkill unblock all`</br>
-`sudo ip link set wlan1 down`</br>
-`sudo iw dev wlan1 set type monitor`</br>
-`sudo ip link set wlan1 up`</br>
-`iw dev`</br>
-Verificar con un aridodump si todo funciona bien</br>
-`sudo airodump-ng wlan1`</br>
-*nota: CTRL + C  para detener una vez verioficado que esta funcionando*</br>
-**Colocar antena en modo managed (normal mode)** </br>
-`sudo ip link set wlan1 down`</br>
-`sudo iw dev wlan1 set type managed`</br>
-`sudo ip link set wlan1 up`</br>
-`sudo systemctl start wpa_supplicant`</br>
+# Tabla de Contenido
 
-**Instalar y utilizar el VK162 USB** </br>
-Primero se debe de identificar en que USB esta conectado el VK162 y talvez otro dispositivo
+* [Arquitectura del Proyecto](#-arquitectura-del-proyecto)
+* [Material Utilizado](#-material-utilizado)
+* [Software Utilizado](#-software-utilizado)
+* [Preparación del Sistema Operativo](#-preparación-del-sistema-operativo)
+* [Instalación del Driver RTL8812AU](#-instalación-del-driver-rtl8812au)
+* [Configuración del Modo Monitor](#-configuración-del-modo-monitor)
+* [Configuración del GPS VK-162](#-configuración-del-gps-vk-162)
+* [Instalación de Kismet](#-instalación-de-kismet)
+* [Scripts Automatizados](#-scripts-automatizados)
+* [Notas Finales](#-notas-finales)
+
+---
+
+# Arquitectura del Proyecto
+
+```text
+Raspberry Pi 3 B+
+      │
+      ├── USB WiFi RTL8812AU (Monitor)
+      │          │
+      │          └── Captura → Kismet
+      │
+      └── USB GPS VK-162
+                 │
+                 └── GPS → gpsd → Kismet
 ```
+
+---
+
+# Material Utilizado
+
+| Componente   | Modelo                            |
+| ------------ | --------------------------------- |
+| Raspberry Pi | Raspberry Pi 3 B+                 |
+| Antena WiFi  | TP-Link Archer T4UHP (US) Ver 1.0 |
+| Chipset WiFi | RTL8812AU                         |
+| GPS          | VK-162                            |
+| Chip GPS     | u-blox 7                          |
+| Protocolo    | NMEA 0183                         |
+
+<p align="center">
+<img src="imagenes/raspberry pi b3.PNG" width="600"><br>
+<img src="imagenes/raspberry pi b3 up.PNG" width="600"><br>
+<img src="imagenes/tp link antena v1.PNG" width="600"><br>
+<img src="imagenes/Archer_T4UHP.jpg" width="600">
+</p>
+
+---
+
+# Software Utilizado
+
+* Raspberry Pi OS Lite (64 bits)
+* Debian Trixie
+* Kismet
+* gpsd
+* aircrack-ng
+
+---
+
+# Preparación del Sistema Operativo
+
+Instalar Raspberry Pi OS Lite para optimizar memoria.
+
+<p align="center">
+<img src="imagenes/01 instalar_raspbian.gif" width="700">
+</p>
+
+Ingresar por SSH (recomendado mediante Ethernet).
+
+<p align="center">
+<img src="imagenes/02 Coneccion por ssh a raspberry.PNG" width="700">
+</p>
+
+Verificar arquitectura:
+
+```bash
+uname -m
+uname -r
+```
+
+Salida esperada:
+
+```text
+aarch64
+6.12.75+rpt-rpi-v8
+```
+
+---
+
+# Instalación del Driver RTL8812AU
+
+Instalar dependencias:
+
+```bash
+sudo apt update
+
+sudo apt install -y \
+build-essential \
+dkms \
+git \
+libelf-dev \
+bc \
+aircrack-ng
+
+sudo apt install -y linux-headers-rpi-v8
+```
+
+Clonar e instalar:
+
+```bash
+cd /usr/src
+
+sudo git clone -b v5.6.4.2 \
+https://github.com/aircrack-ng/rtl8812au.git
+
+cd rtl8812au
+
+sudo make
+sudo make install
+
+sudo depmod -a
+
+sudo reboot
+```
+
+---
+
+# Configuración del Modo Monitor
+
+Detectar interfaz:
+
+```bash
+sudo airmon-ng
+```
+
+<p align="center">
+<img src="imagenes/03 interfaz modo monitor.PNG" width="700">
+</p>
+
+Ejemplo: `wlan1`
+
+Activar modo monitor:
+
+```bash
+sudo systemctl stop wpa_supplicant 2>/dev/null
+sudo killall wpa_supplicant 2>/dev/null
+
+sudo rfkill unblock all
+
+sudo ip link set wlan1 down
+sudo iw dev wlan1 set type monitor
+sudo ip link set wlan1 up
+
+iw dev
+```
+
+Validar captura:
+
+```bash
+sudo airodump-ng wlan1
+```
+
+> CTRL + C para detener.
+
+Volver a modo normal:
+
+```bash
+sudo ip link set wlan1 down
+sudo iw dev wlan1 set type managed
+sudo ip link set wlan1 up
+
+sudo systemctl start wpa_supplicant
+```
+
+---
+
+# Configuración del GPS VK-162
+
+Detectar dispositivo:
+
+```bash
 for dev in /dev/ttyACM*; do
-    echo "===== $dev ====="
-    udevadm info -q property -n $dev | grep -E "ID_VENDOR=|ID_MODEL="
+echo "===== $dev ====="
+udevadm info -q property -n $dev \
+| grep -E "ID_VENDOR=|ID_MODEL="
 done
 ```
-nota: en mi caso esta en el:</br>
-===== /dev/ttyACM0 =====</br>
-ID_MODEL=0043</br>
-ID_VENDOR=Arduino__www.arduino.cc_</br>
-===== /dev/ttyACM1 =====</br>
-ID_MODEL=u-blox_7_-_GPS_GNSS_Receiver </br>
-ID_VENDOR=u-blox_AG_-_www.u-blox.com </br>
 
-Instalar el driver del VK-162 </br>
-`sudo apt update`</br>
-`sudo apt install -y gpsd gpsd-clients`</br>
-`sudo systemctl stop gpsd.socket`</br>
-`sudo gpsd /dev/ttyACM1 -F /var/run/gpsd.sock`</br>
-`cgps -s`</br>
-*nota: CTRL + C  para detener una vez verioficado que esta funcionando*</br>
+Ejemplo:
 
-Modificar el archivo gpsd: `sudo nano /etc/default/gpsd`</br>
+```text
+/dev/ttyACM0 → Arduino
+/dev/ttyACM1 → VK-162
 ```
+
+Instalar GPSD:
+
+```bash
+sudo apt update
+
+sudo apt install -y gpsd gpsd-clients
+```
+
+Probar:
+
+```bash
+sudo systemctl stop gpsd.socket
+
+sudo gpsd /dev/ttyACM1 \
+-F /var/run/gpsd.sock
+
+cgps -s
+```
+
+Editar:
+
+```bash
+sudo nano /etc/default/gpsd
+```
+
+```ini
 START_DAEMON="true"
 DEVICES="/dev/ttyACM1"
 GPSD_OPTIONS="-n"
 USBAUTO="false"
 ```
-**Colocar levantar VK-162** </br>
-`sudo killall gpsd 2>/dev/null`</br>
-`sudo systemctl stop gpsd 2>/dev/null`</br>
-`sudo systemctl stop gpsd.socket 2>/dev/null`</br>
-`sudo rm -f /var/run/gpsd.sock`</br>
-`sudo gpsd /dev/ttyACM1 -F /var/run/gpsd.sock`</br>
-`sleep 2`</br>
-`cgps -s`</br>
 
+Levantar GPS:
 
-**Instalar KISMET** </br>
+```bash
+sudo killall gpsd 2>/dev/null
+
+sudo systemctl stop gpsd
+sudo systemctl stop gpsd.socket
+
+sudo rm -f /var/run/gpsd.sock
+
+sudo gpsd \
+/dev/ttyACM1 \
+-F /var/run/gpsd.sock
+
+sleep 2
+
+cgps -s
 ```
+
+---
+
+# Instalación de Kismet
+
+```bash
 sudo mkdir -p /etc/apt/keyrings
-wget -O /tmp/kismet.key https://www.kismetwireless.net/repos/kismet-release.gpg.key
-sudo gpg --dearmor -o /etc/apt/keyrings/kismet.gpg /tmp/kismet.key
-echo "deb [signed-by=/etc/apt/keyrings/kismet.gpg] https://www.kismetwireless.net/repos/apt/release/trixie trixie main" | sudo tee /etc/apt/sources.list.d/kismet.list
+
+wget -O /tmp/kismet.key \
+https://www.kismetwireless.net/repos/kismet-release.gpg.key
+
+sudo gpg --dearmor \
+-o /etc/apt/keyrings/kismet.gpg \
+/tmp/kismet.key
+
+echo \
+"deb [signed-by=/etc/apt/keyrings/kismet.gpg] https://www.kismetwireless.net/repos/apt/release/trixie trixie main" \
+| sudo tee \
+/etc/apt/sources.list.d/kismet.list
+
 sudo apt update
+
 sudo apt install -y kismet
 ```
-verificando instalacion </br>
-`kismet -v`</br>
-ingresar a la siguiente direccion `sudo nano /etc/kismet/kismet.conf`  </br>
-y colocar las siguientes lineas (descomentar y modificar): </br>
+
+Verificar:
+
+```bash
+kismet -v
 ```
+
+Editar:
+
+```bash
+sudo nano /etc/kismet/kismet.conf
+```
+
+Modificar:
+
+```ini
 source=wlan1:type=linuxwifi
 gps=gpsd:host=localhost,port=2947
 ```
-ingresar a la siguiente direccion `sudo nano /etc/kismet/kismet_logging.conf`  </br>
-y coloca la siguiente linea (descomentar y modificar): </br>
-`log_prefix=/home/americo/kismet_prog/` </br>
-esto define la salida de la base de datos  *.kismet en una direccion especifica </br>
 
-## SCRIPTS AUTOMATIZADOS
-se tiene 2 opciones la primera es de manera manual y esta manera te da la opcion de corregir posibles errores, 
-la segunda es la manera automatica que abre una sesion screen dentro de la sesion screen ejecuta la opcion 1 (kismet_up.sh) y luego minimiza la sesion screen para realize capturas kismet en segundo plano.
-1. Levantar Kismet: de manera directa en primer plano kismet_up.sh
-   [codigo completo aqui](kismet_prog/kismet_up.sh)
-2. Levantar Kismet: en segundo plano (recomendado) utilizando screen
-- Se debe de instalar antes screen  </br>
-`sudo apt update`   </br>
-`sudo apt install -y screen`  </br>
-verificar si instalo correctamente  </br>
-`screen --version`  </br>
-- Luego lanzar [este codigo](1_capturar_sensores.sh) automatizado que realiza las siguientes acciones:  que realiza el siguiente flujo automatico</br> screen -S wardrive</br>
-↓</br>
-ejecuta kismet_up.sh</br>
-↓</br>
-arranca gpsd</br>
-↓</br>
-pone wlan1 monitor</br>
-↓</br>
-levanta Kismet</br>
-↓</br>
-te devuelve el prompt SSH</br>
-- y estara obteniendo automaticamente la captura kismet, pero cuando quiero cerrar la sesion solamente ejecutar [este codigo](kismet_prog/kismet_down.sh)</br>
+Editar:
 
-## NOTAS FINALES
-kismet_up.sh y kismet_down.sh deben de estar en una carpeta kismet_prog/  esta carpeta esta junto a 1_capturar_sensores.sh </br>
-la salida de los archivos *.kismet se la define que la guarde en /home/americo/kismet_prog/  asi que se debe de crear esta carpeta y ahi se guardara las bases de datos generadas por kismet esto para tener un ambiente mas ordenado </br>
+```bash
+sudo nano /etc/kismet/kismet_logging.conf
+```
+
+Modificar:
+
+```ini
+log_prefix=/home/americo/kismet_prog/
+```
+
+Esto define dónde se almacenarán los archivos `.kismet`.
+
+---
+
+# 🤖 Scripts Automatizados
+
+## Opción 1 — Primer Plano
+
+Ejecutar:
+
+```bash
+kismet_up.sh
+```
+
+Archivo:
+
+```text
+kismet_prog/kismet_up.sh
+```
+
+---
+
+## Opción 2 — Segundo Plano (Recomendado)
+
+Instalar Screen:
+
+```bash
+sudo apt update
+sudo apt install -y screen
+```
+
+Verificar:
+
+```bash
+screen --version
+```
+
+Ejecutar:
+
+```bash
+./1_capturar_sensores.sh
+```
+
+Flujo:
+
+```text
+screen -S wardrive
+↓
+ejecuta kismet_up.sh
+↓
+inicia gpsd
+↓
+pone wlan1 monitor
+↓
+inicia Kismet
+↓
+devuelve SSH
+```
+
+Detener:
+
+```bash
+kismet_prog/kismet_down.sh
+```
+
+---
+
+# Notas Finales
+
+Los siguientes archivos deben estar dentro de:
+
+```text
+kismet_prog/
+```
+
+```text
+kismet_up.sh
+kismet_down.sh
+```
+
+Estructura recomendada:
+
+```text
+Proyecto/
+│
+├── kismet_prog/
+│   ├── kismet_up.sh
+│   └── kismet_down.sh
+│
+├── 1_capturar_sensores.sh
+│
+└── capturas/
+```
+
+Salida de bases Kismet:
+
+```text
+/home/americo/kismet_prog/
+```
+
+Esto permite mantener una estructura organizada para posteriores análisis.
