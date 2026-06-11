@@ -114,8 +114,14 @@ y colocar las siguientes lineas (descomentar y modificar): </br>
 source=wlan1:type=linuxwifi
 gps=gpsd:host=localhost,port=2947
 ```
+ingresar a la siguiente direccion `sudo nano /etc/kismet/kismet_logging.conf`  </br>
+y coloca la siguiente linea (descomentar y modificar): </br>
+`log_prefix=/home/americo/kismet_prog/` </br>
+esto define la salida de la base de datos  *.kismet en una direccion especifica </br>
 
 ## SCRIPTS AUTOMATIZADOS
+se tiene 2 opciones la primera es de manera manual y esta manera te da la opcion de corregir posibles errores, 
+la segunda es la manera automatica que abre una sesion screen dentro de la sesion screen ejecuta la opcion 1 (kismet_up.sh) y luego minimiza la sesion screen para realize capturas kismet en segundo plano.
 1. Levantar Kismet: de manera directa en primer plano kismet_up.sh
    [codigo completo aqui](kismet_prog/kismet_up.sh)
 2. Levantar Kismet: en segundo plano (recomendado) utilizando screen
@@ -124,15 +130,19 @@ gps=gpsd:host=localhost,port=2947
 `sudo apt install -y screen`  </br>
 verificar si instalo correctamente  </br>
 `screen --version`  </br>
-- Luego lanzar [este codigo](kismet_prog/start_wardrive.sh) automatizado que realiza las siguientes acciones:  </br> screen -S wardrive
-↓
-ejecuta kismet_up.sh
-↓
-arranca gpsd
-↓
-pone wlan1 monitor
-↓
-levanta Kismet
-↓
-te devuelve el prompt SSH
-- y estara obteniendo automaticamente la captura kismet, pero cuando quiero cerrar la sesion solamente ejecutar [este codigo](kismet_prog/stop_wardrive.sh)
+- Luego lanzar [este codigo](1_capturar_sensores.sh) automatizado que realiza las siguientes acciones:  que realiza el siguiente flujo automatico</br> screen -S wardrive</br>
+↓</br>
+ejecuta kismet_up.sh</br>
+↓</br>
+arranca gpsd</br>
+↓</br>
+pone wlan1 monitor</br>
+↓</br>
+levanta Kismet</br>
+↓</br>
+te devuelve el prompt SSH</br>
+- y estara obteniendo automaticamente la captura kismet, pero cuando quiero cerrar la sesion solamente ejecutar [este codigo](kismet_prog/kismet_down.sh)</br>
+
+## NOTAS FINALES
+kismet_up.sh y kismet_down.sh deben de estar en una carpeta kismet_prog/  esta carpeta esta junto a 1_capturar_sensores.sh </br>
+la salida de los archivos *.kismet se la define que la guarde en /home/americo/kismet_prog/  asi que se debe de crear esta carpeta y ahi se guardara las bases de datos generadas por kismet esto para tener un ambiente mas ordenado </br>
