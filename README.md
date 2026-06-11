@@ -364,82 +364,16 @@ guardando los arcfhivos *.kismet en db_sensores/  de manera automatica ordenando
 
 ## PARTE 2 — Sistema de Telemetria y Adquisicion de Datos (Arduino + Raspberry Pi)
 
-### Objetivo Tecnico
-Implementar un nodo de adquisición determinística de variables físicas del entorno mediante un microcontrolador dedicado para el muestreo analógico/digital y un sistema embebido Linux en modo headless que actúa como data-logger pasivo.
-
----
-
-### Especificaciones de Hardware (Subsistema de Telemetría)
-
-* **Unidad de Adquisición Local:** Arduino UNO (ATmega328P).
-* **Placa de Expansión:** Arduino Training Shield V2.
-* **Sensores Integrados:**
-  * **LM35:** Sensor analógico de temperatura calibrado en grados Celsius (Muestreo vía ADC).
-  * **LDR (Fotorresistencia):** Divisor de tensión para la medición cualitativa de la intensidad lumínica ambiental.
-  * **DHT11:** Sensor digital para el registro de temperatura y humedad relativa (Protocolo Single-Wire).
-  * **Receptor IR (38 kHz):** Sensor de demodulación para la detección de pulsos infrarrojos externos.
-
----
-
-### Arquitectura de Flujo y Control
-
-La topología del sistema se basa en la separación estricta de tareas bajo la filosofía de diseño IoT industrial:
-
-```text
- [ Sensores Físicos ] 
-          │
-          ▼  (Lectura Directa ADC / Digital)
- ┌──────────────────────────────────┐
- │           Arduino UNO            │  <- Control estricto de tiempos de muestreo
- └────────────────┬─────────────────┘
-                  │
-                  ▼  (Transmisión Unidireccional / Frame Serial)
-          [ Bus USB-UART ]
-                  │
-                  ▼  (Escucha Pasiva Asíncrona)
- ┌──────────────────────────────────┐
- │    Script Python (Data Logger)   │  <- Sin peticiones activas (No Polling)
- └────────────────┬─────────────────┘
-                  │
-                  ▼  (Estructuración e Inserción local en caliente)
- ┌──────────────────────────────────┐
- │      Base de Datos SQLite        │  <- Persistencia organizada en db_sensores/
- └──────────────────────────────────┘
-Filosofía de Diseño Embebido
-Determinismo en Hardware: El Arduino UNO gestiona la adquisición y temporización analógica de forma aislada. Esto garantiza inmunidad a retardos críticos (jitter) provocados por los cambios de contexto del sistema operativo de la Raspberry Pi.
-
-Escucha Pasiva en Software: El script en Python actúa como un logger estrictamente asíncrono. Al no realizar peticiones (polling) al microcontrolador y eliminar el handshake interactivo, el sistema se vuelve resiliente al ruido serial y evita bloqueos de E/S en la Raspberry Pi.
-
-Protocolo de Comunicacion Serial
-La comunicación se realiza por medio del puerto serie embebido (USB-UART) con tramas delimitadas de texto plano, facilitando el procesamiento analítico inmediato:
-
-1. Tramas de Telemetría Regular
-Formato estandarizado entre caracteres delimitadores de inicio < y fin > con valores separados por comas:
-
-Plaintext
-<ID_DISPOSITIVO,VALOR_LM35,VALOR_LDR,VALOR_DHT11>
-Ejemplo real transmitido:
-
-Plaintext
-<0,13.20,12.70,14.00>
-2. Tramas de Eventos del Sistema
-Estructuras dedicadas a indicar cambios en el ciclo de vida del hardware o depuración:
-
-Plaintext
-<EVENT,START>
-<EVENT,STOP>
-Persistencia Temporal y Registro (SQLite)
-Sincronización Temporal Crítica
-Para evitar la desincronización al realizar el cruce de datos posterior con los logs de radiofrecuencia (WiFi), el script de Python asocia las tramas recibidas con la estampa de tiempo UTC (Coordinated Universal Time / Zulu Time). Si el sistema no dispone de conexión a red, el tiempo se sincroniza directamente desde las sentencias de tiempo atómico provistas por el daemon gpsd del módulo GPS VK-162.
-
-Segmentación de Archivos
-Los datos se almacenan en archivos SQLite locales autogenerados con nombres dinámicos basados en la fecha y hora de inicialización del proceso de captura:
-
-Plaintext
-db_sensores/
- └── sensores_YYYYMMDD_HHMMSS.db
 
 
 
 
-
+# PARTE 2: Captura de sensores "Arduino" + "Arduino Training Shield V2" + "Raspberry pi b3+" Implementación de una plataforma portátil que realiza la captura de varios sensore(presentes en el arduino train shield v2) utilizando **Arduino Uno** como concentrador de datos y al cual estan conectados los sensores y luego este arduino, envia los datos al raspberry pi quien conectra todos los datos recibidos en una sola base de datos sqlite. --- # Arquitectura del sistema de recoleccion de datos de sensores
+text
+Raspberry Pi 3 B+
+      │
+      ├── Arduino uno conectado con el Arduino Training Shield V2
+      │          │
+      │          └── Sensor de temperatura LM35, Sensor de luz / LDR A1, Sensor digital de humedad y temperatura DHT11 D4, Sensor IR de 38 kHz D6
+      │
+--- # Material Utilizado | Componente | Modelo | | ------------ | --------------------------------- | | Raspberry Pi | Raspberry Pi 3 B+ | | Arduino uno | Arduino uno | | sensores varios | Arduino Training Shield V2 | | Comunicacion | seria rs232 | <p align="center"> <img src="imagenes/arduino_uno.PNG" width="600"><br> <img src="imagenes/training_shield1.PNG" width="600"><br> <img src="imagenes/training_shield2.PNG" width="600"><br> </p> --- # Software Utilizado * Raspberry Pi OS Lite (64 bits) * Debian Trixie * sqlite * python --- # preparacion de SO - instalando arduino Actualizar el sistema sudo apt update sudo apt full-upgrade -y 2. Instalar dependencias sudo apt install -y curl git unzip 3. Instalar Arduino CLI Descarga e instala la versión oficial: curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh Mover el ejecutable: sudo mv bin/arduino-cli /usr/local/bin/ Verificar: arduino-cli version arduino-cli config init Deberías obtener algo similar a: Config file written to: /home/americo/.arduino15/arduino-cli.yaml Luego verifica: ls -l ~/.arduino15/ cat ~/.arduino15/arduino-cli.yaml Después actualiza el índice de placas: arduino-cli core update-index instalar placas de arduino arduino-cli core install arduino:avr Ver qué placas tienes instaladas arduino-cli core list Conectar Arduino y verificar puerto: arduino-cli board list sudo apt update sudo apt install python3-pip -y pip3 --version sudo apt update sudo apt install python3-serial -y VERIFICAR python3 -c "import serial; print(serial.__version__)" Verificar que Arduino aparece Ejecuta: ls /dev/tty* --- # Programar arduino desde el raspberry estructura de archivos /home/americo/arduino/ ├── sensores/ │ └── sensores.ino │ └── cargar_arduino.sh cuando se ejecute el script cargar arduino.sh de manera automatica verificara las carpetas que estan dentro de /home/americo/arduino/ y cada una de estas carpetas tendra dentro el archivo ino que es llamado igual que el nombre de la carpeta
