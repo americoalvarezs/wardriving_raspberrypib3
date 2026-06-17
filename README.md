@@ -243,6 +243,11 @@ cgps -s
 
 # Instalación de Kismet
 
+<p align="center">
+<img src="imagenes/kismet trixie.PNG" width="700">
+</p>
+
+
 ```bash
 sudo mkdir -p /etc/apt/keyrings
 
